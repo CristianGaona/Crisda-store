@@ -40,4 +40,9 @@ export class ProductController {
 
     return this.productService.update(+id, payload);
   };
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+      return this.productService.remove(+id);
+  }
 }
