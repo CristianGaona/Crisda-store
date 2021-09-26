@@ -14,4 +14,9 @@ export class AppController {
   newEndpoint(){
     return 'Mi primer endpoint';
   }
+
+  @Get('/tasks')
+  task(){
+    return this.appService.getTask();
+  }
 }

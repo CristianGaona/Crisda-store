@@ -1,30 +1,48 @@
-import { Module } from '@nestjs/common';
+import { Module, HttpModule, HttpService } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import * as Joi from 'joi';
+import { enviroments } from './enviroments';
+import config from './config';
+
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { OrderController } from './modules/order/controller/order.controller';
-import { CustomerController } from './modules/customer/controller/customer.controller';
-import { OrderModule } from './modules/order/module/order.module';
-import { OrderService } from './modules/order/service/order.service';
-import { CustomerModule } from './modules/customer/module/customer.module';
-import { CustomerService } from './modules/customer/service/customer.service';
-import { UserController } from './modules/user/controller/user.controller';
-import { UserModule } from './modules/user/module/user.module';
-import { UserService } from './modules/user/service/user.service';
-import { CategoryController } from './modules/category/controller/category.controller';
-import { CategoryModule } from './modules/category/module/category.module';
-import { CategoryService } from './modules/category/service/category.service';
-import { ProductController } from './modules/product/controller/product.controller';
-import { ProductModule } from './modules/product/module/product.module';
-import { ProductService } from './modules/product/service/product.service';
-import { BrandController } from './modules/brand/controller/brand.controller';
-import { BrandModule } from './modules/brand/module/brand.module';
-import { BrandService } from './modules/brand/service/brand.service';
-
-
+import { UserModule } from './modules/users/module/user.module';
+import { ProductModule } from './modules/products/module/product.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
-  imports: [OrderModule, CustomerModule, UserModule, CategoryModule, ProductModule, BrandModule],
-  controllers: [AppController, OrderController, CustomerController, UserController, CategoryController, ProductController, BrandController],
-  providers: [AppService, OrderService, CustomerService, UserService, CategoryService, ProductService, BrandService],
+  imports: [
+    ConfigModule.forRoot({
+      envFilePath: enviroments[process.env.NODE_ENV] || '.env',
+      load: [config],
+      isGlobal: true,
+      validationSchema: Joi.object({
+        API_KEY: Joi.number().required(),
+        DATABASE_NAME: Joi.string().required(),
+        DATABASE_PORT: Joi.number().required(),
+      }),
+    }),
+    UserModule,
+    ProductModule,
+    HttpModule,
+    DatabaseModule,
+  ],
+  controllers: [
+    AppController,
+  ],
+  providers: [
+    AppService,
+    {
+    provide: 'TASKS',
+    useFactory: async (http: HttpService) => {
+      const tasks = await http
+        .get('https://jsonplaceholder.typicode.com/todos')
+        .toPromise();
+      return tasks.data;
+    },
+    inject: [HttpService],
+  },
+  ],
 })
 export class AppModule {}
